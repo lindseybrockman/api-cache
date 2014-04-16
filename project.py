@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 app = Flask(__name__)
 
 
@@ -17,11 +17,16 @@ def recipe(recipe_id):
     GET recipes
     """
     if recipe_id:
-        # show single recipe
-        pass
+        # show single recipe 
+        context = {
+                'recipes': None
+                }
     else:
         # show all recipes
-        pass
+        context = {
+                'recipes': None
+                }
+    return render_template('recipe.html', recipes=[])
 
 
 @app.route('/autocomplete/recipe', defaults={'search_term': None})
@@ -37,8 +42,8 @@ def autocomplete(search_term):
         query = """
             SELECT distinct(recipe_id) recipe_id, json_data
             FROM recipe_autocomplete
-            WHERE token like '%{}%'
-            """
+            WHERE token like '%%s%' 
+            """ % search_term
 """
 EXAMPLE DB ROW:
 id    token    recipe_id    json_data: {name, url/id}
