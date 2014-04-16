@@ -1,0 +1,13 @@
+<!doctype html>
+<body>
+<h3>{% if recipe_id %}Recipe {{recipe_id}}{% else %}All Recipes{% endif %}</h3>
+{% for recipe in recipes %}
+<p>
+    {{ recipe.name }}
+    {{ recipe.prep_time }}
+    {{ recipe.cook_time }}
+    {{ recipe.ingredients }}
+    {{ recipe.instructions }}
+</p>    
+{% endfor %}
+</body>
