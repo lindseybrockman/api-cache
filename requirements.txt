@@ -1,3 +1,5 @@
+beautifulsoup4
 flask
 Flask-SQLAlchemy
 psycopg2
+requests
