@@ -10,6 +10,7 @@ class Scraper(object):
         self.category_links = set()
         self.recipe_links = set()
         self.visited_links = set()
+        self.redirector_links = set()
         self.recipe_data = []
         self.failed_because_redirect = 0
 
@@ -24,7 +25,8 @@ class Scraper(object):
             if href:
                 if href.startswith("/"):
                     href = "http://allrecipes.com" + href
-                href = href.split("?")[0]
+                if len(href.split("?")) == 1 or "Page" not in href.split("?")[1]:
+                    href = href.split("?")[0]
                 if '/recipes/' in href and href not in self.visited_links:
                     self.category_links.add(href)
                 if '/Recipe/' in href:
@@ -38,6 +40,7 @@ class Scraper(object):
                 if not res.url in self.visited_links:
                     self.scrape(res)
                 else:
+                    self.redirector_links.add(link)
                     self.failed_because_redirect += 1
 
         # and now we've gone through all the category links
