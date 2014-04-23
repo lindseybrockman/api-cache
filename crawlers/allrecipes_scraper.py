@@ -35,7 +35,7 @@ class Scraper(object):
         self.visited_links.add(response.url)
 
         for link in self.category_links:
-            if link not in self.visited_links:
+            if link not in self.visited_links and link not in self.redirector_links:
                 res = requests.get(link)
                 if not res.url in self.visited_links:
                     self.scrape(res)
