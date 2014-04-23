@@ -36,17 +36,18 @@ class Scraper(object):
 
         for link in self.category_links:
             if link not in self.visited_links and link not in self.redirector_links:
-                res = requests.get(link)
-                if not res.url in self.visited_links:
-                    self.scrape(res)
-                else:
-                    self.redirector_links.add(link)
-                    self.failed_because_redirect += 1
-
+                try:
+                    res = requests.get(link)
+                    if not res.url in self.visited_links:
+                        self.scrape(res)
+                    else:
+                        self.redirector_links.add(link)
+                        self.failed_because_redirect += 1
+                except:
+                    self.visited_links.add(link)
         # and now we've gone through all the category links
         print "Scraped {} category links".format(len(self.category_links))
         print "Scraped {} unique recipes".format(len(self.recipe_links))
-        self.build_recipes(self.recipe_links).format(len(self.recipe_links))
 
     def build_recipes(self, recipe_links):
         for link in recipe_links:
@@ -70,3 +71,5 @@ if __name__ == '__main__':
     resp = requests.get('http://allrecipes.com/') 
     scraper = Scraper()
     scraper.scrape(resp)
+    scraper.build_recipes(scraper.recipe_links)
+
