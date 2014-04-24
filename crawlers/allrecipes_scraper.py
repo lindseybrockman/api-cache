@@ -47,13 +47,14 @@ class Scraper(object):
             if link not in self.dead_ends:
                 try:
                     res = requests.get(link)
-                    if not res.url in self.dead_ends:
+                    if res.url not in self.dead_ends:
                         return res
                     else:
                         self.dead_ends.add(link)
                         self.failed_because_redirect += 1
                 except:
                     self.dead_ends.add(link)
+        return None
 
     def build_recipes(self, recipe_links):
         for link in recipe_links:
