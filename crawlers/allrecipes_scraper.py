@@ -8,46 +8,52 @@ class Scraper(object):
 
     def __init__(self): 
         self.category_links = set()
+        self._finished = False
         self.recipe_links = set()
-        self.visited_links = set()
-        self.redirector_links = set()
+        self.dead_ends = set()
         self.recipe_data = []
         self.failed_because_redirect = 0
 
     def scrape(self, response):
-        soup = BeautifulSoup(response.content)
-        print "CURRENTLY AT: {}".format(response.url)
-        print "visted {}".format(len(self.visited_links))
-        print "recipes found {}".format(len(self.recipe_links))
-        print "failed GETS: {}".format(self.failed_because_redirect)
-        for link in soup.find_all("a"):
-            href = link.get("href")
-            if href:
-                if href.startswith("/"):
-                    href = "http://allrecipes.com" + href
-                if len(href.split("?")) == 1 or "Page" not in href.split("?")[1]:
-                    href = href.split("?")[0]
-                if '/recipes/' in href and href not in self.visited_links:
-                    self.category_links.add(href)
-                if '/Recipe/' in href:
-                    self.recipe_links.add(href)
+        while not self._finished:
+            if len(self.category_links) != 0:
+                response = self._get_next_link()
+            if response:
+                soup = BeautifulSoup(response.content)
+                print "CURRENTLY AT: {}".format(response.url)
+                print "visted {}".format(len(self.dead_ends))
+                print "recipes found {}".format(len(self.recipe_links))
+                print "failed GETS: {}".format(self.failed_because_redirect)
+                for link in soup.find_all("a"):
+                    href = link.get("href")
+                    if href:
+                        if href.startswith("/"):
+                            href = "http://allrecipes.com" + href
+                        if len(href.split("?")) == 1 or "Page" not in href.split("?")[1]:
+                            href = href.split("?")[0]
+                        if '/recipes/' in href and href not in self.dead_ends:
+                            self.category_links.add(href)
+                        if '/Recipe/' in href:
+                            self.recipe_links.add(href)
 
-        self.visited_links.add(response.url)
-
-        for link in self.category_links:
-            if link not in self.visited_links and link not in self.redirector_links:
-                try:
-                    res = requests.get(link)
-                    if not res.url in self.visited_links:
-                        self.scrape(res)
-                    else:
-                        self.redirector_links.add(link)
-                        self.failed_because_redirect += 1
-                except:
-                    self.visited_links.add(link)
-        # and now we've gone through all the category links
+                self.dead_ends.add(response.url)
+            else:
+                self._finished = True
         print "Scraped {} category links".format(len(self.category_links))
         print "Scraped {} unique recipes".format(len(self.recipe_links))
+
+    def _get_next_link(self):
+        for link in self.category_links:
+            if link not in self.dead_ends:
+                try:
+                    res = requests.get(link)
+                    if not res.url in self.dead_ends:
+                        return res
+                    else:
+                        self.dead_ends.add(link)
+                        self.failed_because_redirect += 1
+                except:
+                    self.dead_ends.add(link)
 
     def build_recipes(self, recipe_links):
         for link in recipe_links:
