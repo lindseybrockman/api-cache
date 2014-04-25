@@ -47,7 +47,7 @@ class Scraper(object):
             if link not in self.dead_ends:
                 try:
                     res = requests.get(link)
-                    if res.url not in self.dead_ends:
+                    if res.url not in self.dead_ends and res.status_code not in [404, 500]:
                         return res
                     else:
                         self.dead_ends.add(link)
