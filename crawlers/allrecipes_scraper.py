@@ -64,13 +64,13 @@ class Scraper(object):
             prep_time = soup.find("span", {"id": "prepMinsSpan"})
             cook_time = soup.find("span", {"id": "cookMinsSpan"})
             ingredients = soup.find("ul", class_="ingredient-wrap")
-            instructions = soup.find("div", {"itemprop": "recipeInstruction"})
+            instructions = soup.find("div", class_="directions")
             recipe_data = {
-                "name": name,
-                "prep_time": prep_time,
-                "cook_time": cook_time,
-                "ingredients": ingredients,
-                "instructions": instructions,
+                "name": name.text if name else '',
+                "prep_time": prep_time.text if prep_time else '',
+                "cook_time": cook_time.text if cook_time else '',
+                "ingredients": ingredients.text if ingredients else '',
+                "instructions": instructions.text if instructions else '',
             }
             self.recipe_data.append(recipe_data)
 
