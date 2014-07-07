@@ -1,13 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
+
+<head>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function(){
+        $('#query').on('keyup', function(e){ 
+            $.ajax({
+                url: '/autocomplete/recipe/' + $(this).val(), 
+                success: function(result){
+                    $('#autocomplete-results').html(JSON.parse(result));
+                }
+            })
+        })
+    });
+</script>
+</head>
+
 <body>
+<form id="search" method="post" action="/autocomplete/recipe/">
+    <input id="query" name="query" autocomplete="off" placeholder="Search All Recipes"></input>
+    <input type="submit" value="Search"></input>
+</form>
+<div id="autocomplete-results">
+</div>
 <h3>{% if recipe_id %}Recipe {{recipe_id}}{% else %}All Recipes{% endif %}</h3>
 {% for recipe in recipes %}
 <p>
-    {{ recipe.name }}
-    {{ recipe.prep_time }}
-    {{ recipe.cook_time }}
-    {{ recipe.ingredients }}
-    {{ recipe.instructions }}
+<h3><a href='/recipe/{{ recipe.id }}'>{{ recipe.name }}</a></h3>
+    <p>Rating: {{ recipe.rating }}/5</p>
+    <p>Prep Time: {{ recipe.prep_time }}</p>
+    <p>Cook Time: {{ recipe.cook_time }}</p>
+    <p>Ingredients: {{ recipe.ingredients }}</p>
+    <p>Instructions: {{ recipe.instructions }}</p>
 </p>    
 {% endfor %}
 </body>

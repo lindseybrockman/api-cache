@@ -1,3 +1,5 @@
+import csv
+import json
 import thread
 import requests
 from bs4 import BeautifulSoup
@@ -16,7 +18,7 @@ class Scraper(object):
         self.dead_ends = set()
         self.recipe_data = []
 
-    def scrape(self, response, stop_size=20000):
+    def scrape(self, response, stop_size=8000):
         while not self._finished:
             # if we've crawled this site before,
             # go to the next link
@@ -68,8 +70,11 @@ class Scraper(object):
     def build_recipes(self, chunk_size=2000):
         recipe_list = list(self.recipe_links)
         range_size = len(recipe_list)/chunk_size
-        for i in xrange(range_size):
-            thread.start_new_thread(self._build_recipes, (recipe_list[i*chunk_size: (i+1)*chunk_size-1], ))
+        if len(recipe_list) < chunk_size:
+            self._build_recipes(recipe_list)
+        else:
+            for i in xrange(range_size):
+                thread.start_new_thread(self._build_recipes, (recipe_list[i*chunk_size: (i+1)*chunk_size-1], ))
 
     def _build_recipes(self, recipe_links):
         """
@@ -83,19 +88,49 @@ class Scraper(object):
             cook_time = soup.find("span", {"id": "cookMinsSpan"})
             ingredients = soup.find("ul", class_="ingredient-wrap")
             instructions = soup.find("div", class_="directions")
-            recipe_data = {
-                "name": name.text if name else '',
-                "prep_time": prep_time.text if prep_time else '',
-                "cook_time": cook_time.text if cook_time else '',
-                "ingredients": ingredients.text if ingredients else '',
-                "instructions": instructions.text if instructions else '',
-            }
-            self.recipe_data.append(recipe_data)
+            if name:
+                recipe_data = {
+                    "name": name.text,
+                    "prep_time": prep_time.text if prep_time else '',
+                    "cook_time": cook_time.text if cook_time else '',
+                    "ingredients": ingredients.text if ingredients else '',
+                    "instructions": instructions.text if instructions else '',
+                }
+                self.recipe_data.append(recipe_data)
         print "PARSED: {}".format(len(self.recipe_data))
 
+    def save_as_json(self):
+        with open('all_recipes.json', 'w') as outfile:
+            json.dump(self.recipe_data, outfile)
+
+    def save_as_csv(self):
+        with open('all_recipes.csv', 'w')  as csvfile:
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow([
+                'name',
+                'prep_time',
+                'cook_time',
+                'ingredients',
+                'instructions'
+            ])
+            for row in self.recipe_data:
+                name = row['name'].replace(',', ';').replace('"', '').encode('utf-8')
+                prep_time = row['prep_time'].replace(',', ';').replace('"', '').encode('utf-8')
+                cook_time = row['cook_time'].replace(',', ';').replace('"', '').encode('utf-8')
+                ingredients = row['ingredients'].replace(',', ';').replace('"', '').encode('utf-8') 
+                instructions = row['instructions'].replace(',', ';').replace('"', '').encode('utf-8') 
+                csv_writer.writerow([
+                    name,
+                    prep_time,
+                    cook_time,
+                    ingredients,
+                    instructions
+                ])
+
 if __name__ == '__main__':
-    resp = requests.get('http://allrecipes.com/') 
+    resp = requests.get('http://allrecipes.com/')  
     scraper = Scraper()
-    scraper.scrape(resp)
-    scraper.build_recipes(scraper.recipe_links)
+    scraper.scrape(resp, 2000)
+    scraper.build_recipes()
+    scraper.save_as_csv()
 
