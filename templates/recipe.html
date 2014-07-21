@@ -2,15 +2,26 @@
 
 <head>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
 <script>
     $(document).ready(function(){
-        $('#query').on('keyup', function(e){ 
-            $.ajax({
-                url: '/autocomplete/recipe/' + $(this).val(), 
-                success: function(result){
-                    $('#autocomplete-results').html(JSON.parse(result));
-                }
-            })
+        $('.query').autocomplete({
+            minLength: 3,
+            source: function(request, response){
+                $.ajax({
+                    url: '/search/recipe/' + request.term,
+                    success: function(data) {
+                        console.log(data);
+                        response($.map(JSON.parse(data).slice(0, 10), function(item){
+                            return {
+                                label: item.name,
+                                id: item.id
+                            };
+                        }))
+                    }
+                })
+            }
         })
     });
 </script>
@@ -21,7 +32,7 @@
     <tr>
         <td>
             <form id="search" method="post" action="/search/recipe/">
-                <input id="query" name="query" autocomplete="off" placeholder="Search All Recipes"></input>
+                <input class="query" name="query" autocomplete="off" placeholder="Search All Recipes"></input>
                 <input type="submit" value="Search"></input>
             </form>
         </td>
@@ -30,7 +41,7 @@
         </td>
         <td>
             <form id="search_cache" method="post" action="/search-cache/recipe/">
-                <input id="query" name="query" autocomplete="off" placeholder="Search All Recipes With Cache"></input>
+                <input class="query" name="query" autocomplete="off" placeholder="Search All Recipes With Cache"></input>
                 <input type="submit" value="Cache Search"></input>
             </form>
         </td>
@@ -39,7 +50,7 @@
 
 <div id="autocomplete-results">
 </div>
-<h3>{% if recipe_id %}Recipe {{recipe_id}}{% else %}All Recipes{% endif %}</h3>
+<h3>{% if recipe_id %}Recipe {{recipe_id}}{% elif search_term %} {{ recipes|length }} recipes matching "{{search_term}}"{% else %}All Recipes{% endif %}</h3>
 {% for recipe in recipes %}
 <p>
 <h3><a href='/recipe/{{ recipe.id }}'>{{ recipe.name }}</a></h3>

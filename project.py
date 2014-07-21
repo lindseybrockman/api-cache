@@ -61,7 +61,7 @@ def add_recipe():
             """, (name, cook_time, prep_time, ingredients, instructions, rating)
         )
         new_recipe_id = cursor.fetchone()[0]
-        return redierect(url_for('recipe', new_recipe_id))
+        return redirect(url_for('recipe', new_recipe_id))
     return render_template('recipe_add.html')
 
 
@@ -83,73 +83,58 @@ def _search(search_term, cache=False):
     if request.method == 'POST':
         search_term = request.form['query']
 
-    query = build_query(search_term)
+    query = """
+        SELECT
+            name,
+            id,
+            ingredients,
+            instructions,
+            prep_time,
+            cook_time,
+            rating
+        FROM
+            recipe
+        WHERE
+            name like %s
+            OR ingredients like %s
+        ORDER BY
+            rating DESC,
+            name
+    """
 
-    # If we're using the cahced search, try to get result from cache
+    # If we're using the cached search, try to get result from cache
     redis = Redis()
     result = None
     if cache:
-        result = redis.get(search_term)
+        result = redis.get('cache:{}'.format(search_term))
 
     # If the cache doesn't contain the key, or 
     # if we aren't using caching, fall back on the DB
     if not result:
         connection = psycopg2.connect(DB_CONNECTION_PARAMS)
         cursor = connection.cursor()
-        cursor.execute(query, '%{}%'.format(search_term))
-        rows = cursor.fetchall()
-        columns = cursor.keys()
-        result = [dict(zip(columns, row)) for row in rows]
-        result = json.dumps(result)
-        print get_debug_queries()
+        like_search = '%{}%'.format(search_term)
+        # print query for debugging
+        print cursor.mogrify(query, (like_search, like_search, ))
+        cursor.execute(query, (like_search, like_search, ))
 
+        # get the results
+        rows = cursor.fetchall()
+        columns = cursor.description
+        result = [dict(zip([col[0] for col in columns], row)) for row in rows]
+        result = json.dumps(result)
         # If we're using a caching view
         # add the new key to the cache
         if cache:
-            redis.set(search_term, result)
+            redis.set('cache:{}'.format(search_term), result)
+
+    if request.method == 'POST':
+        return render_template('recipe.html', search_term=search_term, recipes=json.loads(result))
 
     return result
 
-
-def build_query(search_term):
-    """
-    Build query string to pass to SQLAlchemy
-    """
-    # Basic query that searches for recipes
-    # whose names/ingredients match the search term
-    query = """
-        SELECT
-            name,
-            id,
-            prep_time,
-            cook_time,
-            (substring(cook_time from '\d+')::int + substring(prep_time from '\d+')::int) as total_time,
-            rating
-        FROM
-            recipe
-        WHERE
-            name LIKE %s
-            OR ingredients LIKE %s
-        """
-
-    # If someone searches for '# mins', strip out
-    # the text and cast the number string as an int.
-    # Then query for recipes with a total time <= searched time
-    try:
-        int_search_term = int(search_term.strip(" mins").strip(" hours"))
-    except ValueError:
-        pass
-    else:
-        query += """
-            OR {} >= (substring(cook_time from '\d+')::int + substring(prep_time from '\d+')::int)
-        """.format(int_search_term)
-    query += """
-        ORDER BY
-            name,
-            rating DESC
-        LIMIT 30
-    """
-    return query
+def flush_stale(recipe_name, recipe_ingredients):
+    pass
 
 
 def dictfetchall(cursor):
