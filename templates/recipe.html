@@ -5,19 +5,19 @@
 <script src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
 <link rel="stylesheet" href="//code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
 <script>
-    $(document).ready(function(){
-        $('.query').each(function(i, el){
-            $(el).autocomplete({
-                minLength: 3,
-                source: function(request, response){
-                    $.ajax({
-                        url: $(el).data('url') + request.term,
-                        success: function(data) {
-                            response($.map(JSON.parse(data).slice(0, 10), function(item){
-                                return {
-                                    label: item.name,
-                                    id: item.id
-                                };
+$(document).ready(function(){
+    $('.query').each(function(i, el){
+        $(el).autocomplete({
+            minLength: 3,
+            source: function(request, response){
+                $.ajax({
+                    url: $(el).data('url') + request.term,
+                    success: function(data) {
+                        response($.map(JSON.parse(data).slice(0, 10), function(item){
+                            return {
+                                label: item.name,
+                                id: item.id
+                            };
                             }))
                         }
                     })
@@ -33,8 +33,8 @@
     <tr>
         <td>
             <form id="search" method="post" action="/search/recipe/">
-                <input class="query" name="query" autocomplete="off" placeholder="Search All Recipes" data-url="/search/recipe/"></input>
-                <input type="submit" value="Search"></input>
+                <input class="query" name="query" autocomplete="off" placeholder="Search All Recipes" data-url="/search/recipe/">
+                <input type="submit" value="Search">
             </form>
         </td>
         <td>
@@ -42,8 +42,8 @@
         </td>
         <td>
             <form id="search_cache" method="post" action="/search-cache/recipe/">
-                <input class="query" name="query" autocomplete="off" placeholder="Search All Recipes With Cache" data-url="/search-cache/recipe/"></input>
-                <input type="submit" value="Cache Search"></input>
+                <input class="query" name="query" autocomplete="off" placeholder="Search All Recipes With Cache" data-url="/search-cache/recipe/">
+                <input type="submit" value="Cache Search">
             </form>
         </td>
     </tr>
