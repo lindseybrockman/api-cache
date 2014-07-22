@@ -1,7 +1,7 @@
 import json
 import psycopg2
 
-from flask import Flask, redirect, render_template, request
+from flask import Flask, redirect, render_template, request, url_for
 from flask.ext.sqlalchemy import get_debug_queries, SQLAlchemy
 from redis import Redis
 from sqlalchemy.sql import text
@@ -23,7 +23,7 @@ def index():
 
 
 @app.route('/recipe/', defaults={'recipe_id': None})
-@app.route('/recipe/<int:recipe_id>')
+@app.route('/recipe/<int:recipe_id>/')
 def recipe(recipe_id):
     """
     GET recipes
@@ -58,25 +58,31 @@ def add_recipe():
             """
                 INSERT INTO recipe (name, cook_time, prep_time, ingredients, instructions, rating)
                 VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
             """, (name, cook_time, prep_time, ingredients, instructions, rating)
         )
+        connection.commit()
         new_recipe_id = cursor.fetchone()[0]
-        return redirect(url_for('recipe', new_recipe_id))
+        # flush stale keys
+        flush_stale(name)
+        flush_stale(ingredients)
+        # finally, redirect to the new recipe
+        return redirect('/recipe/{}/'.format(new_recipe_id))
     return render_template('recipe_add.html')
 
 
 @app.route('/search/recipe/', defaults={'search_term': ''}, methods=['GET', 'POST'])
 @app.route('/search/recipe/<search_term>', methods=['GET'])
 def search(search_term):
-    return _search(search_term)
+    return base_search(search_term)
 
 @app.route('/search-cache/recipe/', defaults={'search_term': ''}, methods=['GET', 'POST'])
 @app.route('/search-cache/recipe/<search_term>', methods=['GET'])
 def search_cached(search_term):
-    return _search(search_term, cache=True)
+    return base_search(search_term, cache=True)
 
 
-def _search(search_term, cache=False):
+def base_search(search_term, cache=False):
     """
     Search API
     """
@@ -113,7 +119,11 @@ def _search(search_term, cache=False):
     if not result:
         connection = psycopg2.connect(DB_CONNECTION_PARAMS)
         cursor = connection.cursor()
+
+        # following query paramter is not left or right anchored
+        # so %Chicken% will match 'Chicken Soup', 'Fried Chicken', and 'BBQ Chicken Wings'
         like_search = '%{}%'.format(search_term)
+
         # print query for debugging
         print cursor.mogrify(query, (like_search, like_search, ))
         cursor.execute(query, (like_search, like_search, ))
@@ -133,8 +143,18 @@ def _search(search_term, cache=False):
 
     return result
 
-def flush_stale(recipe_name, recipe_ingredients):
-    pass
+
+def flush_stale(text):
+    keys = set()
+    for m in range(len(text)):
+        for n in range(m):
+            keys.add(text[n:m])
+    if '' in keys:
+        keys.remove('')
+    keys = list(keys)
+    redis = Redis()
+    for key in keys:
+        redis.delete('cache:{}'.format(key))
 
 
 def dictfetchall(cursor):
