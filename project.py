@@ -33,7 +33,7 @@ def recipe(recipe_id):
         recipes = [Recipe.query.get_or_404(recipe_id)]
     else:
         # show all recipes
-               recipes = Recipe.query.order_by(Recipe.rating.desc()).all()[:100]
+        recipes = Recipe.query.order_by(Recipe.rating.desc()).all()[:100]
     print get_debug_queries()
     return render_template('recipe.html', recipe_id=recipe_id, recipes=recipes)
 
@@ -64,8 +64,8 @@ def add_recipe():
         connection.commit()
         new_recipe_id = cursor.fetchone()[0]
         # flush stale keys
-        flush_stale(name)
-        flush_stale(ingredients)
+        # flush_stale(name)
+        # flush_stale(ingredients)
         # finally, redirect to the new recipe
         return redirect('/recipe/{}/'.format(new_recipe_id))
     return render_template('recipe_add.html')
