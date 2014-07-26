@@ -2,7 +2,7 @@ import json
 import psycopg2
 
 from flask import Flask, redirect, render_template, request, url_for
-from flask.ext.sqlalchemy import get_debug_queries, SQLAlchemy
+from flask.ext.sqlalchemy import SQLAlchemy
 from redis import Redis
 from sqlalchemy.sql import text
 
@@ -34,7 +34,6 @@ def recipe(recipe_id):
     else:
         # show all recipes
         recipes = Recipe.query.order_by(Recipe.rating.desc()).all()[:100]
-    print get_debug_queries()
     return render_template('recipe.html', recipe_id=recipe_id, recipes=recipes)
 
 
@@ -64,8 +63,8 @@ def add_recipe():
         connection.commit()
         new_recipe_id = cursor.fetchone()[0]
         # flush stale keys
-        # flush_stale(name)
-        # flush_stale(ingredients)
+        #flush_stale(name)
+        #flush_stale(ingredients)
         # finally, redirect to the new recipe
         return redirect('/recipe/{}/'.format(new_recipe_id))
     return render_template('recipe_add.html')
@@ -153,17 +152,10 @@ def flush_stale(text):
         keys.remove('')
     keys = list(keys)
     redis = Redis()
+    p = redis.pipeline()
     for key in keys:
-        redis.delete('cache:{}'.format(key))
-
-
-def dictfetchall(cursor):
-    "Returns all rows from a cursor as a dict"
-    desc = cursor.description
-    return [
-        dict(zip([col[0] for col in desc], row))
-        for row in cursor.fetchall()
-    ]
+        p.delete('cache:{}'.format(key))
+    p.execute()
 
 
 if __name__ == '__main__':

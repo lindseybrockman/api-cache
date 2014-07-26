@@ -1,7 +1,4 @@
-beautifulsoup4
 flask
-Flask-Cache
 Flask-SQLAlchemy
 psycopg2
 redis
-requests

@@ -4,6 +4,14 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <script src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
 <link rel="stylesheet" href="//code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
+<style>
+    .search {
+        padding: 30px;
+    }
+    .query {
+        width: 200px;
+    }
+</style>
 <script>
 $(document).ready(function(){
     $('.query').each(function(i, el){
@@ -32,7 +40,7 @@ $(document).ready(function(){
 <table>
     <tr>
         <td>
-            <form id="search" method="post" action="/search/recipe/">
+            <form class="search" id="search" method="post" action="/search/recipe/">
                 <input class="query" name="query" autocomplete="off" placeholder="Search All Recipes" data-url="/search/recipe/">
                 <input type="submit" value="Search">
             </form>
@@ -41,8 +49,8 @@ $(document).ready(function(){
               
         </td>
         <td>
-            <form id="search_cache" method="post" action="/search-cache/recipe/">
-                <input class="query" name="query" autocomplete="off" placeholder="Search All Recipes With Cache" data-url="/search-cache/recipe/">
+            <form class="search" id="search_cache" method="post" action="/search-cache/recipe/">
+                <input class="query" name="query" width="30px" autocomplete="off" placeholder="Search All Recipes With Cache" data-url="/search-cache/recipe/">
                 <input type="submit" value="Cache Search">
             </form>
         </td>
