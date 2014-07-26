@@ -63,8 +63,8 @@ def add_recipe():
         connection.commit()
         new_recipe_id = cursor.fetchone()[0]
         # flush stale keys
-        #flush_stale(name)
-        #flush_stale(ingredients)
+        flush_stale(name)
+        flush_stale(ingredients)
         # finally, redirect to the new recipe
         return redirect('/recipe/{}/'.format(new_recipe_id))
     return render_template('recipe_add.html')
